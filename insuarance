@@ -1,0 +1,131 @@
+# Install necessary libraries (if not already installed)
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, mean_absolute_error, mean_squared_error, silhouette_score
+from sklearn.linear_model import LinearRegression
+
+
+
+# Load the dataset
+df = pd.read_csv('Insurance.csv')
+
+# Check the first few rows
+print(df.head())
+
+# Inspect data structure
+print(df.info())
+
+# Get a statistical summary
+print(df.describe())
+print(df.dtypes)
+
+
+# Convert categorical columns to 'category' datatype for memory efficiency
+categorical_columns = df.select_dtypes(include=['object']).columns
+df[categorical_columns] = df[categorical_columns].astype('category')
+
+# Check unique values for each categorical column
+for column in categorical_columns:
+    print(f"{column}: {df[column].nunique()} unique categories")
+
+
+  # Check for missing values
+print(df.isnull().sum())
+
+# Calculate the percentage of missing values
+print((df.isnull().sum() / len(df)) * 100)
+
+
+# Visualize outliers for numerical columns
+plt.figure(figsize=(10, 5))
+sns.boxplot(data=df['age'])
+plt.title("Box Plot for Numerical Columns")
+plt.show()
+
+# Visualize outliers for numerical columns
+plt.figure(figsize=(10, 5))
+sns.boxplot(data=df['bmi'])
+plt.title("Box Plot for Numerical Columns")
+plt.show()
+
+# Visualize outliers for numerical columns
+plt.figure(figsize=(10, 5))
+sns.boxplot(data=df['children'])
+plt.title("Box Plot for Numerical Columns")
+plt.show()
+
+# Visualize outliers for numerical columns
+plt.figure(figsize=(10, 5))
+sns.boxplot(data=df['charges'])
+plt.title("Box Plot for Numerical Columns")
+plt.show()
+
+numerical_columns = ['age', 'bmi', 'children','charges']
+
+
+# Capping outliers
+for column in numerical_columns:
+    Q1 = df[column].quantile(0.25)
+    Q3 = df[column].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+
+    # Apply capping
+    df[column] = np.where(df[column] > upper_bound, upper_bound, df[column])
+    df[column] = np.where(df[column] < lower_bound, lower_bound, df[column])
+
+    # Remove duplicate rows
+df.drop_duplicates(inplace=True)
+
+# Define features and target
+X = df.drop(columns=['charges'])
+y = df['charges']
+
+# Split the dataset into training and testing subsets (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+# Step 12: Standardize Numerical Features
+scaler = StandardScaler()
+num_cols = ['age', 'bmi', 'children']
+X_train[num_cols] = scaler.fit_transform(X_train[num_cols])
+X_test[num_cols] = scaler.transform(X_test[num_cols])
+y_train = scaler.fit_transform(pd.DataFrame(y_train))
+y_test = scaler.transform(pd.DataFrame(y_test))
+
+from sklearn.linear_model import LogisticRegression
+
+
+X_train = pd.get_dummies(X_train, drop_first=True)
+X_test = pd.get_dummies(X_test, drop_first=True)
+
+from sklearn.linear_model import LinearRegression
+
+model = LinearRegression()
+
+# apply model
+model.fit(X_train, y_train)
+
+# طباعة المعاملات (coefficients) والإعتراض (intercept)
+print(f"Coefficients: {model.coef_}")
+print(f"Intercept: {model.intercept_}")
+
+
+
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+y_pred = model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+
+print(f"Mean Absolute Error: {mae}")
+print(f"Mean Squared Error: {mse}")
+print(f"Root Mean Squared Error: {rmse}")
